@@ -20,6 +20,35 @@
 		fill: #ff0000;
 	}
 
+	.sound-container {
+		position: relative;	
+	}
+
+	.bottom .foreground {
+		fill: #ffb686;
+	}
+
+	.bottom .background {
+		fill: #969696;
+	}
+
+	.timestamp {
+		padding: 1px 2px;
+		color: #ff8800;
+		background: #000;
+		opacity: .9;
+		top: 55px;
+		position: absolute;
+		border-radius: 2px;
+		-webkit-user-select: none; /* Chrome/Safari */
+		-moz-user-select: none; /* Firefox */
+		-ms-user-select: none; /* IE10+ */
+
+		/* Rules below not implemented in browsers yet */
+		-o-user-select: none;
+		user-select: none;
+	}
+
 	.mousetracker {
 		fill: transparent;
 	}
@@ -78,7 +107,12 @@
 <div class="button-wrapper">
 	<div class="play-btn"></div>
 </div>
+<h2 class="loading">
+	Loading please wait
+</h2>
+<div class="sound-container">
 <svg></svg>
+</div>
 <script src="audiorider.js" type="text/javascript"></script>
 </body>
 </html>

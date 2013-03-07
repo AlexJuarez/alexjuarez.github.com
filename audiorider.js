@@ -74,33 +74,39 @@ window.AudioContext && (context = window.AudioContext);
         var samplesize = this.SAMPLE_SIZE;
         var buffer = this.source[index].buffer;
         var inc = Math.ceil(buffer.length/1000),
-          buffersummary = [],
+          buffersummary = {top: [], bottom: []},
           samplearea = Math.max(0, Math.floor(inc/samplesize)),
-          audioBuffer = buffer.getChannelData(0), avg = 0.0,
-          max = -1, min = 0;
+          audioBuffer = buffer.getChannelData(0), avgt = 0.0,
+          avgb = 0.0, max = -1, min = 0;
 
         for(var i = 0; i < buffer.length; i += inc){
           for(var j = 0; j < samplesize; j++){
             if(audioBuffer[Math.round(i+j*samplearea)] > 0)
-            avg += audioBuffer[Math.round(i+j*samplearea)];
+            avgt += audioBuffer[Math.round(i+j*samplearea)];
+            else
+            avgb += audioBuffer[Math.round(i+j*samplearea)];
           }
-          avg /= samplesize;
-          if(avg > max)
-            max = avg;
-          if(avg < min)
-            min = avg;
-          if(!isNaN(avg))
-            buffersummary.push(avg);
-          avg = 0.0;
+          avgt /= samplesize;
+          avgb /= samplesize
+          if(avgt > max)
+            max = avgt;
+          if(avgb < min)
+            min = avgb;
+          if(!isNaN(avgt))
+            buffersummary.top.push(avgt);
+          else
+            buffersummary.top.push(0);
+
+          if(!isNaN(avgb))
+            buffersummary.bottom.push(avgb);
+          else
+            buffersummary.bottom.push(0);
+
+          avgt = 0.0;
+          avgb = 0.0;
         }
 
-        var  v = (max - min);
-
-        for(var i = 0; i < buffersummary.length; i++){
-          buffersummary[i] = (buffersummary[i]-min);
-        }
-
-        return [buffersummary, v];
+        return {summary: buffersummary, min: min, max: max};
       }
 
     },
@@ -123,12 +129,16 @@ var soundPlayer = new soundPlayer();
 
 soundPlayer.loadSound("satitisfcationrlgrimes.mp3", getReady);
 function getReady(){
+  $(".loading").remove();
+
   var buffersummary = soundPlayer.stageSound(0);
 
-  var v = buffersummary[1];
-  buffersummary = buffersummary[0];
-
-  var width = 1000, height = 100;
+  var max = buffersummary.max,
+    min = buffersummary.min,
+    buffersummarytop = buffersummary.summary.top,
+    buffersummarybottom = buffersummary.summary.bottom;
+  var top = 70, bottom = 30;
+  var width = 1000, height = top + bottom;
 
   var x = d3.scale.linear()
     .range([0, width]);
@@ -136,29 +146,34 @@ function getReady(){
   var y = d3.scale.linear()
     .range([height, 0]);
 
-  var area = d3.svg.area()
+  var areatop = d3.svg.area()
     .x(function(d, i) { return x(i); })
-    .y0(height)
+    .y0(top)
     .y1(function(d){ return y(d); });
 
-  var area2 = d3.svg.area()
+  var areabottom = d3.svg.area()
     .x(function(d, i) { return x(i); })
-    .y0(height)
-    .y1(function(d){ return height; });
+    .y0(function(d){ return y(d *.5);})
+    .y1(top);
 
 
   var svg = d3.select("body").select("svg")
     .attr("width", width)
     .attr("height", height);
 
-  x.domain([0, buffersummary.length]);
-  y.domain([0,  v]);
+  x.domain([0, buffersummary.summary.top.length]);
+  y.domain([min*.5,  max]);
 
-  svg.append("clipPath")
-    .attr("id", "clip")
-    .append("path")
-    .datum(buffersummary)
-    .attr("d", area)
+  var clippath = svg.append("clipPath")
+    .attr("id", "clip");
+
+  clippath.append("path")
+    .datum(buffersummary.summary.top)
+    .attr("d", areatop)
+
+  clippath.append("path")
+    .datum(buffersummary.summary.bottom)
+    .attr("d", areabottom)
 
   svg.append("linearGradient")
     .attr('x1', '0%')
@@ -187,17 +202,39 @@ function getReady(){
 
   var group = svg.append("g").attr("clip-path", "url(#clip)");
 
-  var tracker = group.append("rect")
+  var topgroup = group.append("g")
+    .attr("class", "top");
+
+  var bottomgroup = group.append("g")
+    .attr("class", "bottom")
+    .attr("transform", "translate(0," + top + ")");
+
+  var trackertop = topgroup.append("rect")
     .attr("class", "foreground")
-    .attr("width", 0)
-    .attr("height", height)
+      .attr("width", 0)
+      .attr("height", top)
     .style('fill', 'url(#foreground-gradiant)');
 
-  var background = group.append("rect")
+  var trackerbottom = bottomgroup.append("rect")
+      .attr("class", "foreground")
+      .attr("width", 0)
+      .attr("height", bottom);
+
+  var backgroundtop = topgroup.append("rect")
     .attr("class", "background")
     .attr("width", width)
-    .attr("height", height)
+    .attr("height", top)
     .style('fill', 'url(#background-gradiant)');
+
+  var backgroundbottom = bottomgroup.append("rect")
+    .attr("class", "background")
+    .attr("width", width)
+    .attr("height", bottom);
+
+  var timestamp = d3.select(".sound-container").append("div")
+    .attr("class", "timestamp")
+    .attr("style", "left: 0;")
+    .text("0:00");
 
   var mousetracker = svg.append("rect")
     .attr("class", "mousetracker")
@@ -211,12 +248,12 @@ function getReady(){
 
   mousetracker.on("click", function(){
     var x = d3.event.offsetX;
-    tracker.attr("width", x);
-    background
+    d3.selectAll(".foreground").attr("width", x);
+    d3.selectAll(".background")
       .attr("width", width-x)
       .attr("transform", "translate("+ x + ", 0)");
     $(".play-btn").addClass("pause");
-    playSound((x/width), tracker, background, width);
+    playSound((x/width), width, timestamp);
   });
 
   var dragInterval;
@@ -242,14 +279,14 @@ function getReady(){
     } else {
       $this.addClass("pause");
       var time = (d3.select(".foreground").attr("width")/width);
-      playSound(time, tracker, background, width);
+      playSound(time, width, timestamp);
     }
 
   });
 
   var intervalTimer;
 
-  function playSound(time, tracker, background, width) {
+  function playSound(time, width, timestamp) {
     soundPlayer.play(0, time*soundPlayer.source[0].buffer.duration);
 
     if(intervalTimer){
@@ -263,13 +300,22 @@ function getReady(){
 
       if(w >= width) {
         clearInterval(intervalTimer);
-        tracker.attr("width", 0);
-        background
+        d3.selectAll(".foreground").attr("width", 0);
+        d3.selectAll(".background")
           .attr("width", width)
           .attr("transform", "translate("+ 0 + ", 0)");
       } else {
-        tracker.attr("width", w);
-        background
+        d3.selectAll(".foreground").attr("width", w);
+
+        time = Math.round(diff+offset);
+
+        secs = time%60;
+
+        secs < 10 && (secs = "0" + secs);
+
+        timestamp.attr("style", "left:" + parseInt((w+1)) + "px;").text(parseInt(time/60) + ":" + secs);
+
+        d3.selectAll(".background")
           .attr("width", width-w)
           .attr("transform", "translate("+ w + ", 0)");
       }
