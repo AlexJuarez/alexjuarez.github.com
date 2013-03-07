@@ -164,18 +164,44 @@ function getReady(){
   x.domain([0, buffersummary.summary.top.length]);
   y.domain([min*.5,  max]);
 
-  var clippath = svg.append("clipPath")
+  var defs = svg.append("svg:defs");
+
+  var clippath = defs.append("clipPath")
     .attr("id", "clip");
 
   clippath.append("path")
     .datum(buffersummary.summary.top)
-    .attr("d", areatop)
+    .attr("d", areatop);
 
   clippath.append("path")
     .datum(buffersummary.summary.bottom)
-    .attr("d", areabottom)
+    .attr("d", areabottom);
 
-  svg.append("linearGradient")
+  defs.append("svg:pattern")
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr("id", "foreground-bottom")
+    .attr("width", 1)
+    .attr("height", 30)
+    .append("svg:image")
+    .attr("xlink:href","foreground-bottom.png")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", 1)
+    .attr("height", 30)
+
+  defs.append("svg:pattern")
+    .attr('patternUnits', 'userSpaceOnUse')
+    .attr("id", "background-bottom")
+    .attr("width", 1)
+    .attr("height", 30)
+    .append("svg:image")
+    .attr("xlink:href","background-bottom.png")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", 1)
+    .attr("height", 30)
+
+  defs.append("linearGradient")
     .attr('x1', '0%')
     .attr('y1', '0%')
     .attr('x2', '0%')
@@ -187,7 +213,7 @@ function getReady(){
     }
   );
 
-  svg.append("linearGradient")
+  defs.append("linearGradient")
     .attr('x1', '0%')
     .attr('y1', '0%')
     .attr('x2', '0%')
@@ -198,7 +224,6 @@ function getReady(){
       gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#ff2400;stop-opacity:1');
     }
   );
-
 
   var group = svg.append("g").attr("clip-path", "url(#clip)");
 
@@ -218,18 +243,21 @@ function getReady(){
   var trackerbottom = bottomgroup.append("rect")
       .attr("class", "foreground")
       .attr("width", 0)
-      .attr("height", bottom);
+      .attr("height", bottom)
+    .style("fill", "url(#foreground-bottom)");
 
   var backgroundtop = topgroup.append("rect")
     .attr("class", "background")
     .attr("width", width)
     .attr("height", top)
-    .style('fill', 'url(#background-gradiant)');
+    .style("fill", "url(#background-gradiant)");
 
   var backgroundbottom = bottomgroup.append("rect")
     .attr("class", "background")
     .attr("width", width)
-    .attr("height", bottom);
+    .attr("height", bottom)
+  .style("fill", "url(#background-bottom)");
+
 
   var timestamp = d3.select(".sound-container").append("div")
     .attr("class", "timestamp")
