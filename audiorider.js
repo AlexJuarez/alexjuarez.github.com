@@ -62,7 +62,7 @@ window.AudioContext && (context = window.AudioContext);
       request.onload = function(){
         context.decodeAudioData(request.response, function(buffer){
           source.push(new audio(buffer, context));
-          callback();
+          callback((source.length-1));
         });
       };
 
@@ -126,235 +126,262 @@ window.AudioContext && (context = window.AudioContext);
 
 
 var soundPlayer = new soundPlayer();
+var id = 0;
 
-soundPlayer.loadSound("satitisfcationrlgrimes.mp3", getReady);
-function getReady(){
-  $(".loading").remove();
-
-  var top = 70, bottom = 30;
-  var width = 1000, height = top + bottom;
-  var buffersummary = soundPlayer.stageSound(0, width);
-
-  var max = buffersummary.max,
-    min = buffersummary.min,
-    buffersummarytop = buffersummary.summary.top,
-    buffersummarybottom = buffersummary.summary.bottom;
-
-  var x = d3.scale.linear()
-    .range([0, width]);
-
-  var y = d3.scale.linear()
-    .range([height, 0]);
-
-  var areatop = d3.svg.area()
-    .x(function(d, i) { return x(i); })
-    .y0(top)
-    .y1(function(d){ return y(d); });
-
-  var areabottom = d3.svg.area()
-    .x(function(d, i) { return x(i); })
-    .y0(function(d){ return y(d *.5);})
-    .y1(top);
+$(document).ready(function(){
+  setStage("satitisfcationrlgrimes.mp3");
+});
 
 
-  var svg = d3.select("body").select("svg")
-    .attr("width", width)
-    .attr("height", height);
 
-  x.domain([0, buffersummary.summary.top.length]);
-  y.domain([min*.5,  max]);
+function setStage(url){
+  var thisid = id;
+  var $container = $("<div id='soundbox" + thisid + "' class='soundbox'></div>");
+  id++;
+  $container.append($("<div class='button-wrapper'></div>").append($("<div class='play-btn'></div>")));
 
-  var defs = svg.append("svg:defs");
+  var $loader = $("<h2 class='loading'>Loading please wait</h2>");
+  $container.append($loader);
 
-  var clippath = defs.append("clipPath")
-    .attr("id", "clip");
+  var $soundcontainer = $("<div class='sound-container'><svg></svg></div>");
 
-  clippath.append("path")
-    .datum(buffersummary.summary.top)
-    .attr("d", areatop);
+  $container.append($soundcontainer);
 
-  clippath.append("path")
-    .datum(buffersummary.summary.bottom)
-    .attr("d", areabottom);
+  $("body").append($container);
 
-  defs.append("svg:pattern")
-    .attr('patternUnits', 'userSpaceOnUse')
-    .attr("id", "foreground-bottom")
-    .attr("width", 1)
-    .attr("height", 30)
-    .append("svg:image")
-    .attr("xlink:href","foreground-bottom.png")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", 1)
-    .attr("height", 30)
+  soundPlayer.loadSound(url, makePlayBox);
 
-  defs.append("svg:pattern")
-    .attr('patternUnits', 'userSpaceOnUse')
-    .attr("id", "background-bottom")
-    .attr("width", 1)
-    .attr("height", 30)
-    .append("svg:image")
-    .attr("xlink:href","background-bottom.png")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", 1)
-    .attr("height", 30)
+  function makePlayBox(sourceindex){
+    $loader.remove();
 
-  defs.append("linearGradient")
-    .attr('x1', '0%')
-    .attr('y1', '0%')
-    .attr('x2', '0%')
-    .attr('y2', '100%')
-    .attr('id', 'background-gradiant').call(
-    function(gradient){
-      gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#555555;stop-opacity:1');
-      gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#333333;stop-opacity:1');
-    }
-  );
+    var top = 70, bottom = 30;
+    var width = 1000, height = top + bottom;
+    var buffersummary = soundPlayer.stageSound(sourceindex, width);
 
-  defs.append("linearGradient")
-    .attr('x1', '0%')
-    .attr('y1', '0%')
-    .attr('x2', '0%')
-    .attr('y2', '100%')
-    .attr('id', 'foreground-gradiant').call(
-    function(gradient){
-      gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#ff5c00;stop-opacity:1');
-      gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#ff2400;stop-opacity:1');
-    }
-  );
+    var max = buffersummary.max,
+      min = buffersummary.min,
+      buffersummarytop = buffersummary.summary.top,
+      buffersummarybottom = buffersummary.summary.bottom;
 
-  var group = svg.append("g").attr("clip-path", "url(#clip)");
+    var x = d3.scale.linear()
+      .range([0, width]);
 
-  var topgroup = group.append("g")
-    .attr("class", "top");
+    var y = d3.scale.linear()
+      .range([height, 0]);
 
-  var bottomgroup = group.append("g")
-    .attr("class", "bottom")
-    .attr("transform", "translate(0," + top + ")");
+    var areatop = d3.svg.area()
+      .x(function(d, i) { return x(i); })
+      .y0(top)
+      .y1(function(d){ return y(d); });
 
-  var trackertop = topgroup.append("rect")
-    .attr("class", "foreground")
+    var areabottom = d3.svg.area()
+      .x(function(d, i) { return x(i); })
+      .y0(function(d){ return y(d *.5);})
+      .y1(top);
+
+
+    var svg = d3.select("#soundbox" + thisid).select("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+    x.domain([0, buffersummary.summary.top.length]);
+    y.domain([min*.5,  max]);
+
+    var defs = svg.append("svg:defs");
+
+    var clippath = defs.append("clipPath")
+      .attr("id", "clip");
+
+    clippath.append("path")
+      .datum(buffersummary.summary.top)
+      .attr("d", areatop);
+
+    clippath.append("path")
+      .datum(buffersummary.summary.bottom)
+      .attr("d", areabottom);
+
+    defs.append("svg:pattern")
+      .attr('patternUnits', 'userSpaceOnUse')
+      .attr("id", "foreground-bottom")
+      .attr("width", 1)
+      .attr("height", 30)
+      .append("svg:image")
+      .attr("xlink:href","foreground-bottom.png")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 1)
+      .attr("height", 30)
+
+    defs.append("svg:pattern")
+      .attr('patternUnits', 'userSpaceOnUse')
+      .attr("id", "background-bottom")
+      .attr("width", 1)
+      .attr("height", 30)
+      .append("svg:image")
+      .attr("xlink:href","background-bottom.png")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", 1)
+      .attr("height", 30)
+
+    defs.append("linearGradient")
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%')
+      .attr('id', 'background-gradiant').call(
+      function(gradient){
+        gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#555555;stop-opacity:1');
+        gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#333333;stop-opacity:1');
+      }
+    );
+
+    defs.append("linearGradient")
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '0%')
+      .attr('y2', '100%')
+      .attr('id', 'foreground-gradiant').call(
+      function(gradient){
+        gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#ff5c00;stop-opacity:1');
+        gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#ff2400;stop-opacity:1');
+      }
+    );
+
+    var group = svg.append("g").attr("clip-path", "url(#clip)");
+
+    var topgroup = group.append("g")
+      .attr("class", "top");
+
+    var bottomgroup = group.append("g")
+      .attr("class", "bottom")
+      .attr("transform", "translate(0," + top + ")");
+
+    var trackertop = topgroup.append("rect")
+      .attr("class", "foreground")
       .attr("width", 0)
       .attr("height", top)
-    .style('fill', 'url(#foreground-gradiant)');
+      .style('fill', 'url(#foreground-gradiant)');
 
-  var trackerbottom = bottomgroup.append("rect")
+    var trackerbottom = bottomgroup.append("rect")
       .attr("class", "foreground")
       .attr("width", 0)
       .attr("height", bottom)
-    .style("fill", "url(#foreground-bottom)");
+      .style("fill", "url(#foreground-bottom)");
 
-  var backgroundtop = topgroup.append("rect")
-    .attr("class", "background")
-    .attr("width", width)
-    .attr("height", top)
-    .style("fill", "url(#background-gradiant)");
+    var backgroundtop = topgroup.append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", top)
+      .style("fill", "url(#background-gradiant)");
 
-  var backgroundbottom = bottomgroup.append("rect")
-    .attr("class", "background")
-    .attr("width", width)
-    .attr("height", bottom)
-  .style("fill", "url(#background-bottom)");
+    var backgroundbottom = bottomgroup.append("rect")
+      .attr("class", "background")
+      .attr("width", width)
+      .attr("height", bottom)
+      .style("fill", "url(#background-bottom)");
 
 
-  var timestamp = d3.select(".sound-container").append("div")
-    .attr("class", "timestamp")
-    .attr("style", "left: 0;")
-    .text("0:00");
+    var timestamp = d3.select("#soundbox" + thisid).select(".sound-container").append("div")
+      .attr("class", "timestamp")
+      .attr("style", "left: 0;")
+      .text("0:00");
 
-  var mousetracker = d3.select(".sound-container").append("div")
-    .attr("class", "mousetracker")
-    .attr("style", "width:" + width + "px; height:"+ height + "px;");
+    var mousetracker = d3.select("#soundbox" + thisid).select(".sound-container").append("div")
+      .attr("class", "mousetracker")
+      .attr("style", "width:" + width + "px; height:"+ height + "px;");
 
-  var cursor = group.append("rect")
-    .attr("class", "cursor")
-    .attr("width", 1)
-    .attr("height", height);
+    var cursor = group.append("rect")
+      .attr("class", "cursor")
+      .attr("width", 1)
+      .attr("height", height);
 
-  mousetracker.on("click", function(){
-    var x = d3.event.offsetX;
-    d3.selectAll(".foreground").attr("width", x);
-    d3.selectAll(".background")
-      .attr("width", width-x)
-      .attr("transform", "translate("+ x + ", 0)");
-    $(".play-btn").addClass("pause");
-    playSound((x/width), width, timestamp);
-  });
+    mousetracker.on("click", function(){
+      var x = d3.event.offsetX;
+      d3.select("#soundbox" + thisid).selectAll(".foreground").attr("width", x);
+      d3.select("#soundbox" + thisid).selectAll(".background")
+        .attr("width", width-x)
+        .attr("transform", "translate("+ x + ", 0)");
+      $("#soundbox"+ thisid).find(".play-btn").addClass("pause");
+      playSound((x/width), width, timestamp);
+    });
 
-  var dragInterval;
+    var dragInterval;
 
-  mousetracker.on("mousemove", function(){
-    var x = d3.event.offsetX;
-    cursor.attr("transform", "translate("+ x + ", 0)");
-  });
+    mousetracker.on("mousemove", function(){
+      var x = d3.event.offsetX;
+      cursor.attr("transform", "translate("+ x + ", 0)");
+    });
 
-  mousetracker.on("mouseover", function(){
-    cursor.style('opacity', 1);
-  });
+    mousetracker.on("mouseover", function(){
+      cursor.style('opacity', 1);
+    });
 
-  mousetracker.on("mouseout", function(){
-    cursor.style('opacity', 0);
-  });
+    mousetracker.on("mouseout", function(){
+      cursor.style('opacity', 0);
+    });
 
-  $(".play-btn").click(function(){
-    $this = $(this);
-    if($this.hasClass("pause")){
-      $this.removeClass("pause");
-      stopSound();
-    } else {
-      $this.addClass("pause");
-      var time = (d3.select(".foreground").attr("width")/width);
-      playSound(time, width, timestamp);
-    }
-
-  });
-
-  var intervalTimer;
-
-  function playSound(time, width, timestamp) {
-    soundPlayer.play(0, time*soundPlayer.source[0].buffer.duration);
-
-    if(intervalTimer){
-      clearInterval(intervalTimer);
-    }
-
-    intervalTimer = setInterval(function(){
-      var offset = soundPlayer.source[0].offset;
-      var diff = soundPlayer.context.currentTime - soundPlayer.source[0].startTime;
-      var w = (diff+offset)/soundPlayer.source[0].buffer.duration*width;
-
-      if(w >= width) {
-        clearInterval(intervalTimer);
-        d3.selectAll(".foreground").attr("width", 0);
-        d3.selectAll(".background")
-          .attr("width", width)
-          .attr("transform", "translate("+ 0 + ", 0)");
+    $("#soundbox"+ thisid).find(".play-btn").click(function(){
+      $this = $(this);
+      if($this.hasClass("pause")){
+        $this.removeClass("pause");
+        stopSound();
       } else {
-        d3.selectAll(".foreground").attr("width", w);
-
-        time = Math.round(diff+offset);
-
-        secs = time%60;
-
-        secs < 10 && (secs = "0" + secs);
-
-        timestamp.attr("style", "left:" + parseInt((w+1)) + "px;").text(parseInt(time/60) + ":" + secs);
-
-        d3.selectAll(".background")
-          .attr("width", width-w)
-          .attr("transform", "translate("+ w + ", 0)");
+        $this.addClass("pause");
+        var time = (d3.select("#soundbox" + thisid).select(".foreground").attr("width")/width);
+        playSound(time, width, timestamp);
       }
-    }, 50);
-  }
 
-  function stopSound(){
-    if(intervalTimer){
-      clearInterval(intervalTimer);
+    });
+
+    var intervalTimer;
+
+    function playSound(time, width, timestamp) {
+      soundPlayer.play(thisid, time*soundPlayer.source[thisid].buffer.duration);
+
+      if(intervalTimer){
+        clearInterval(intervalTimer);
+      }
+
+      intervalTimer = setInterval(function(){
+        var offset = soundPlayer.source[thisid].offset;
+        var diff = soundPlayer.context.currentTime - soundPlayer.source[thisid].startTime;
+        var w = (diff+offset)/soundPlayer.source[thisid].buffer.duration*width;
+
+        if(w >= width) {
+          clearInterval(intervalTimer);
+          d3.select("#soundbox" + thisid).selectAll(".foreground").attr("width", 0);
+          d3.select("#soundbox" + thisid).selectAll(".background")
+            .attr("width", width)
+            .attr("transform", "translate("+ 0 + ", 0)");
+        } else {
+          d3.select("#soundbox" + thisid).selectAll(".foreground").attr("width", w);
+
+          time = Math.round(diff+offset);
+
+          secs = time%60;
+
+          secs < 10 && (secs = "0" + secs);
+
+          timestamp.attr("style", "left:" + parseInt((w+1)) + "px;").text(parseInt(time/60) + ":" + secs);
+
+          d3.select("#soundbox" + thisid).selectAll(".background")
+            .attr("width", width-w)
+            .attr("transform", "translate("+ w + ", 0)");
+        }
+      }, 50);
     }
 
-    soundPlayer.stop(0);
+    function stopSound(){
+      if(intervalTimer){
+        clearInterval(intervalTimer);
+      }
+
+      soundPlayer.stop(thisid);
+    }
   }
+
 }
+
+
 
