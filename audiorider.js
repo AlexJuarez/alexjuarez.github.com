@@ -13,7 +13,7 @@ window.AudioContext && (context = window.AudioContext);
     this.startTime = 0; //Time taken from context on play to determine the play head
     this.sourceNode = null;
     this.playing = false;
-  }
+  };
 
   audio.prototype = {
     play: function(time){
@@ -64,16 +64,16 @@ window.AudioContext && (context = window.AudioContext);
           source.push(new audio(buffer, context));
           callback();
         });
-      }
+      };
 
       request.send();
     },
-    stageSound: function(index){
+    stageSound: function(index, buckets){
 
       if(this.source[index] !== undefined){
         var samplesize = this.SAMPLE_SIZE;
         var buffer = this.source[index].buffer;
-        var inc = Math.ceil(buffer.length/1000),
+        var inc = Math.ceil(buffer.length/buckets),
           buffersummary = {top: [], bottom: []},
           samplearea = Math.max(0, Math.floor(inc/samplesize)),
           audioBuffer = buffer.getChannelData(0), avgt = 0.0,
@@ -82,12 +82,12 @@ window.AudioContext && (context = window.AudioContext);
         for(var i = 0; i < buffer.length; i += inc){
           for(var j = 0; j < samplesize; j++){
             if(audioBuffer[Math.round(i+j*samplearea)] > 0)
-            avgt += audioBuffer[Math.round(i+j*samplearea)];
+              avgt += audioBuffer[Math.round(i+j*samplearea)];
             else
-            avgb += audioBuffer[Math.round(i+j*samplearea)];
+              avgb += audioBuffer[Math.round(i+j*samplearea)];
           }
           avgt /= samplesize;
-          avgb /= samplesize
+          avgb /= samplesize;
           if(avgt > max)
             max = avgt;
           if(avgb < min)
@@ -131,14 +131,14 @@ soundPlayer.loadSound("satitisfcationrlgrimes.mp3", getReady);
 function getReady(){
   $(".loading").remove();
 
-  var buffersummary = soundPlayer.stageSound(0);
+  var top = 70, bottom = 30;
+  var width = 1000, height = top + bottom;
+  var buffersummary = soundPlayer.stageSound(0, width);
 
   var max = buffersummary.max,
     min = buffersummary.min,
     buffersummarytop = buffersummary.summary.top,
     buffersummarybottom = buffersummary.summary.bottom;
-  var top = 70, bottom = 30;
-  var width = 1000, height = top + bottom;
 
   var x = d3.scale.linear()
     .range([0, width]);
@@ -185,7 +185,7 @@ function getReady(){
       gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#555555;stop-opacity:1');
       gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#333333;stop-opacity:1');
     }
-  )
+  );
 
   svg.append("linearGradient")
     .attr('x1', '0%')
@@ -197,7 +197,7 @@ function getReady(){
       gradient.append('svg:stop').attr('offset', '0%').attr('style', 'stop-color:#ff5c00;stop-opacity:1');
       gradient.append('svg:stop').attr('offset', '100%').attr('style', 'stop-color:#ff2400;stop-opacity:1');
     }
-  )
+  );
 
 
   var group = svg.append("g").attr("clip-path", "url(#clip)");
@@ -236,10 +236,9 @@ function getReady(){
     .attr("style", "left: 0;")
     .text("0:00");
 
-  var mousetracker = svg.append("rect")
+  var mousetracker = d3.select(".sound-container").append("div")
     .attr("class", "mousetracker")
-    .attr("width", width)
-    .attr("height", height);
+    .attr("style", "width:" + width + "px; height:"+ height + "px;");
 
   var cursor = group.append("rect")
     .attr("class", "cursor")
