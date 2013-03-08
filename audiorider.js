@@ -50,7 +50,7 @@ window.AudioContext && (context = window.AudioContext);
 
   soundPlayer.prototype = {
     SAMPLE_SIZE: 128, //Default sample_size
-    loadSound: function(src, callback){
+    loadSound: function(src, callback, failback){
       var request = new XMLHttpRequest();
       var context = this.context;
       var source = this.source;
@@ -60,10 +60,16 @@ window.AudioContext && (context = window.AudioContext);
       //Decode loaded data
 
       request.onload = function(){
-        context.decodeAudioData(request.response, function(buffer){
-          source.push(new audio(buffer, context));
-          callback((source.length-1));
-        });
+        if(request.readyState === 4){
+          if(request.status === 200){
+            context.decodeAudioData(request.response, function(buffer){
+              source.push(new audio(buffer, context));
+              callback((source.length-1));
+            });
+          } else {
+            failback();
+          }
+        }
       };
 
       request.send();
@@ -133,7 +139,6 @@ $(document).ready(function(){
 });
 
 
-
 function setStage(url){
   var thisid = id;
   var $container = $("<div id='soundbox" + thisid + "' class='soundbox'></div>");
@@ -149,7 +154,13 @@ function setStage(url){
 
   $("body").append($container);
 
-  soundPlayer.loadSound(url, makePlayBox);
+  soundPlayer.loadSound(url, makePlayBox, failed);
+
+  function failed(){
+    console.log("yup something bad happend, probably an improper url");
+
+    $("body").find($container).remove();
+  }
 
   function makePlayBox(sourceindex){
     $loader.remove();
